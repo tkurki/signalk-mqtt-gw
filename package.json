@@ -1,0 +1,18 @@
+{
+  "name": "signalk-mqtt-gw",
+  "version": "0.0.1",
+  "description": "Signal K server plugin that provides gateway functionality between Signal K and MQTT",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "signalk-node-server-plugin"
+  ],
+  "author": "teppo.kurki@iki,fi",
+  "license": "ISC",
+  "dependencies": {
+    "debug": "^2.3.2",
+    "mosca": "^2.2.0"
+  }
+}
