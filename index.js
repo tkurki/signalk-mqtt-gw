@@ -17,7 +17,8 @@
 
 const id = "signalk-mqtt-gw"
 const debug = require('debug')(id)
-const mosca = require('mosca');
+const mosca = require('mosca')
+const mdns = require('mdns')
 
 module.exports = function(app) {
   var plugin = {
@@ -42,35 +43,65 @@ module.exports = function(app) {
   }
 
   var server
+  var started = false
+  var ad
+
+  function publishDelta(delta) {
+    const prefix = (delta.context === app.selfContext ? 'vessels/self' : delta.context.replace('.', '/')) + '/'
+    delta.updates.forEach(update => {
+      update.values.forEach(pathValue => {
+        server.publish({
+          topic: prefix + pathValue.path.replace('.', '/'),
+          payload: pathValue.value === null ? "null" : pathValue.value.toString(),
+          qos: 0,
+          retain: false
+        })
+      })
+    })
+  }
+
 
   plugin.start = function(options) {
     server = new mosca.Server(options)
+
+    app.signalk.on('delta', publishDelta)
+
 
     server.on('clientConnected', function(client) {
       console.log('client connected', client.id);
     });
 
-    // fired when a message is received
     server.on('published', function(packet, client) {
-      console.log(packet.topic + " " + packet.payload.toString())
-      console.log(client)
-      var skData = extractSkData(packet)
-      if(skData.valid) {
-        app.signalk.addDelta(toDelta(skData, client))
+      if(client) {
+        var skData = extractSkData(packet)
+        if(skData.valid) {
+          app.signalk.addDelta(toDelta(skData, client))
+        }
       }
     });
+
 
     server.on('ready', onReady);
 
     function onReady() {
-      console.log('Mosca server is up and running')
+      ad = mdns.createAdvertisement(mdns.tcp('mqtt'), options.port);
+      ad.start();
+      console.log('Mosca MQTT server is up and running on port ' + options.port)
     }
+    started = true
   }
 
   plugin.stop = function() {
-    if(server) {
-      server.stop()
+    if(started) {
+      app.signalk.on('delta', publishDelta)
     }
+    if(server) {
+      server.close()
+    }
+    if(ad) {
+      ad.stop()
+    }
+    started = false
   };
 
   return plugin;
@@ -85,7 +116,9 @@ module.exports = function(app) {
     }
     result.context = 'vessels.' + app.selfId
     result.path = pathParts.splice(2).join('.')
-    result.value = Number(packet.payload.toString())
+    if(packet.payload) {
+      result.value = Number(packet.payload.toString())
+    }
     result.valid = true
     return result;
   }
