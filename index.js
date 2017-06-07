@@ -86,24 +86,27 @@ module.exports = function(app) {
 
     client.on("connect", function() {
       onStop.push(
-        app.streambundle.getSelfStream("navigation.position").onValue(value =>
-          client.publish(
-            "signalk/delta",
-            JSON.stringify({
-              context: "vessels." + app.selfId,
-              updates: [
-                {
-                  values: [
-                    {
-                      path: "navigation.position",
-                      value: value
-                    }
-                  ]
-                }
-              ]
-            })
+        app.streambundle
+          .getSelfStream("navigation.position")
+          .debounceImmediate(15 * 1000)
+          .onValue(value =>
+            client.publish(
+              "signalk/delta",
+              JSON.stringify({
+                context: "vessels." + app.selfId,
+                updates: [
+                  {
+                    values: [
+                      {
+                        path: "navigation.position",
+                        value: value
+                      }
+                    ]
+                  }
+                ]
+              })
+            )
           )
-        )
       );
       onStop.push(_ => client.end());
     });
