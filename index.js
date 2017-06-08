@@ -105,7 +105,8 @@ module.exports = function(app) {
                     ]
                   }
                 ]
-              })
+              }),
+              {qos: 1}
             )
           )
       );
