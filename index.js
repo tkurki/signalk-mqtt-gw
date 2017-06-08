@@ -96,6 +96,7 @@ module.exports = function(app) {
                 context: "vessels." + app.selfId,
                 updates: [
                   {
+                    timestamp: new Date(),
                     values: [
                       {
                         path: "navigation.position",
