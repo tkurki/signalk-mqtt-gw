@@ -183,7 +183,7 @@ module.exports = function(app) {
       console.log(
         'Mosca MQTT server is up and running on port ' + options.port
       );
-      onStop.push(_ => {});
+      onStop.push(_ => { server.close() });
     }
   }
 
