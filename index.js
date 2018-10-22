@@ -25,6 +25,7 @@ module.exports = function(app) {
   var plugin = {
     unsubscribes: [],
   };
+  var server
 
   plugin.id = id;
   plugin.name = 'Signal K - MQTT Gateway';
@@ -157,7 +158,7 @@ module.exports = function(app) {
   }
 
   function startLocalServer(options, onStop) {
-    const server = new mosca.Server(options);
+    server = new mosca.Server(options);
 
     app.signalk.on('delta', publishLocalDelta);
 
@@ -182,7 +183,7 @@ module.exports = function(app) {
       console.log(
         'Mosca MQTT server is up and running on port ' + options.port
       );
-      onStop.push(_ => {});
+      onStop.push(_ => { server.close() });
     }
   }
 
