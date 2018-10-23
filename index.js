@@ -161,6 +161,7 @@ module.exports = function(app) {
     server = new mosca.Server(options);
 
     app.signalk.on('delta', publishLocalDelta);
+    onStop.push(_ => { app.signalk.removeListener('delta', publishLocalDelta) });
 
     server.on('clientConnected', function(client) {
       console.log('client connected', client.id);
