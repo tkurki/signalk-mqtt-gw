@@ -195,7 +195,7 @@ module.exports = function(app) {
     delta.updates.forEach(update => {
       update.values.forEach(pathValue => {
         server.publish({
-          topic: prefix + pathValue.path.replace('.', '/'),
+          topic: prefix + pathValue.path.replace(/\./g, '/'),
           payload:
             pathValue.value === null ? 'null' : pathValue.value.toString(),
           qos: 0,
