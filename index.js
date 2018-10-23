@@ -231,7 +231,7 @@ module.exports = function(app) {
       context: skData.context,
       updates: [
         {
-          $source: 'mqtt.' + client.id.replace('/', '_').replace('.', '_'),
+          $source: 'mqtt.' + client.id.replace(/\//g, '_').replace(/\./g, '_'),
           values: [
             {
               path: skData.path,
