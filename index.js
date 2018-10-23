@@ -178,12 +178,20 @@ module.exports = function(app) {
     server.on('ready', onReady);
 
     function onReady() {
-      ad = mdns.createAdvertisement(mdns.tcp('mqtt'), options.port);
-      ad.start();
+      //Make this optional - Creates issues in some container environments
+      try {
+        ad = mdns.createAdvertisement(mdns.tcp('mqtt'), options.port);
+        ad.start();
+      } 
+      catch (ex) {
+        console.log('Could not start mDNS:' + ex);
+      }
       console.log(
         'Mosca MQTT server is up and running on port ' + options.port
       );
       onStop.push(_ => { server.close() });
+      //When the plugin stops, we should stop the listener also
+      onStop.push(_ => { app.signalk.removeListener('delta', publishLocalDelta) });
     }
   }
 
