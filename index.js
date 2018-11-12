@@ -27,8 +27,6 @@ module.exports = function(app) {
   };
   var server
 
-  var bunyan = require('bunyan');
-  var log = bunyan.createLogger({name: 'mosca'});
 
   plugin.id = id;
   plugin.name = 'Signal K - MQTT Gateway';
@@ -44,11 +42,6 @@ module.exports = function(app) {
         type: 'boolean',
         title: 'Run local server (publish all deltas there in individual topics based on SK path and convert all data published in them by other clients to SK deltas)',
         default: false,
-      },
-      localServerMosca: {
-        type: 'boolean',
-        tutle: 'Runs an embedded local Mosca server or assumes a third party one is running',
-        default: true,
       },
       port: {
         type: 'number',
@@ -111,7 +104,7 @@ module.exports = function(app) {
     plugin.onStop = [];
 
 
-    if (options.runLocalServer || !options.localServerMosca) {
+    if (options.runLocalServer) {
       startLocalServer(options, plugin.onStop);
     }
     if (options.sendToRemote) {
