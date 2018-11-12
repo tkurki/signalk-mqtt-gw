@@ -27,6 +27,9 @@ module.exports = function(app) {
   };
   var server
 
+  var bunyan = require('bunyan');
+  var log = bunyan.createLogger({name: 'mosca'});
+
   plugin.id = id;
   plugin.name = 'Signal K - MQTT Gateway';
   plugin.description =
@@ -41,6 +44,11 @@ module.exports = function(app) {
         type: 'boolean',
         title: 'Run local server (publish all deltas there in individual topics based on SK path and convert all data published in them by other clients to SK deltas)',
         default: false,
+      },
+      localServerMosca: {
+        type: 'boolean',
+        tutle: 'Runs an embedded local Mosca server or assumes a third party one is running',
+        default: true,
       },
       port: {
         type: 'number',
@@ -102,7 +110,8 @@ module.exports = function(app) {
   plugin.start = function(options) {
     plugin.onStop = [];
 
-    if (options.runLocalServer) {
+
+    if (options.runLocalServer || !options.localServerMosca) {
       startLocalServer(options, plugin.onStop);
     }
     if (options.sendToRemote) {
@@ -158,6 +167,7 @@ module.exports = function(app) {
   }
 
   function startLocalServer(options, onStop) {
+
     server = new mosca.Server(options);
 
     app.signalk.on('delta', publishLocalDelta);
@@ -196,18 +206,48 @@ module.exports = function(app) {
     const prefix =
       (delta.context === app.selfContext
         ? 'vessels/self'
-        : delta.context.replace('.', '/')) + '/';
+        : delta.context.replace('.', '/').replace(/:/g, "/")) ;
+  
     delta.updates.forEach(update => {
-      update.values.forEach(pathValue => {
-        server.publish({
-          topic: prefix + pathValue.path.replace(/\./g, '/'),
-          payload:
-            pathValue.value === null ? 'null' : pathValue.value.toString(),
-          qos: 0,
-          retain: false,
-        });
-      });
+      if (update.values) {
+
+        for (var i = update.values.length - 1; i >= 0; i--) {
+          var path = update.values[i].path;
+          var value = update.values[i].value;
+          var topicprefix = prefix+'/'+path.replace(/\./g, '/');
+          if (topicprefix.endsWith('/')) topicprefix=topicprefix.substring(0,topicprefix.length-1);
+          var stypeof=typeof value;
+            if (stypeof=='number' || stypeof=='string'){
+              publishMessage(server,topicprefix, value, 0,false);
+            }
+            else if (stypeof == 'object'){
+              for (const prop in value) {
+                if (value.hasOwnProperty(prop)) {
+                  publishMessage(server,topicprefix+'/'+prop, value[prop], 0,false);
+                }
+              }
+            }
+        }
+      }
     });
+  }
+
+
+
+  function publishMessage (server, topic, payload,qos,retain){
+    var stypeof=typeof payload;
+    if (stypeof=='number') payload=""+payload;
+      var message = {
+        topic,
+      payload,
+      qos,
+      retain,
+    };
+
+   server.publish(message, function() {
+    //console.log ('Published to '+topic+" "+payload);
+   });
+   
   }
 
   function extractSkData(packet) {
