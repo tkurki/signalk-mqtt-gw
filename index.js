@@ -14,23 +14,23 @@
  * limitations under the License.
 */
 
-const id = 'signalk-mqtt-gw';
-const debug = require('debug')(id);
-const mosca = require('mosca');
-const mqtt = require('mqtt');
-const NeDBStore = require('mqtt-nedb-store');
-const mdns = require('mdns');
+const mosca = require('mosca')
+const mqtt = require('mqtt')
+const NeDBStore = require('mqtt-nedb-store')
+const mdns = require('mdns')
 
-module.exports = function(app) {
-  var plugin = {
-    unsubscribes: [],
-  };
-  var server
+const id = 'mqtt-gw'
 
-  plugin.id = id;
-  plugin.name = 'Signal K - MQTT Gateway';
+module.exports = function (app) {
+  const plugin = {
+    unsubscribes: []
+  }
+  let server
+
+  plugin.id = id
+  plugin.name = 'MQTT'
   plugin.description =
-    'plugin that provides gateway functionality between Signal K and MQTT';
+    'plugin that provides gateway functionality between Signal K and MQTT'
 
   plugin.schema = {
     title: 'Signal K - MQTT Gateway',
@@ -39,212 +39,141 @@ module.exports = function(app) {
     properties: {
       runLocalServer: {
         type: 'boolean',
-        title: 'Run local server (publish all deltas there in individual topics based on SK path and convert all data published in them by other clients to SK deltas)',
-        default: false,
+        title: 'Run local server (you must configure a server below to make use of it)',
+        default: false
       },
       port: {
         type: 'number',
         title: 'Local server port',
-        default: 1883,
+        default: 1883
       },
-      sendToRemote: {
+      mdns: {
         type: 'boolean',
-        title: 'Send position to remote server',
-        default: false,
+        default: true
       },
-      remoteHost: {
-        type: 'string',
-        title: 'MQTT server Url (starts with mqtt/mqtts)',
-        description:
-          'MQTT server that the paths listed below should be sent to',
-        default: 'mqtt://somehost',
-      },
-      username: {
-        type: "string",
-        title: "MQTT server username"
-      },
-      password: {
-        type: "string",
-        title: "MQTT server password"
-      },
-      rejectUnauthorized: {
-        type: "boolean",
-        default: false,
-        title: "Reject self signed and invalid server certificates"
-      },
-      paths: {
+      servers: {
         type: 'array',
-        title: 'Signal K self paths to send',
-        default: [{ path: 'navigation.position', interval: 60 }],
+        title: 'Server Configurations',
         items: {
           type: 'object',
           properties: {
-            path: {
+            url: {
               type: 'string',
-              title: 'Path',
+              title: 'MQTT server Url (starts with mqtt/mqtts)',
+              default: 'mqtt://somehost'
             },
-            interval: {
-              type: 'number',
-              title:
-                'Minimum interval between updates for this path to be sent to the server',
+            username: {
+              type: 'string',
+              title: 'MQTT server username'
             },
-          },
-        },
-      },
-    },
-  };
-
-  var started = false;
-  var ad;
-
-  plugin.onStop = [];
-
-  plugin.start = function(options) {
-    plugin.onStop = [];
-
-    if (options.runLocalServer) {
-      startLocalServer(options, plugin.onStop);
-    }
-    if (options.sendToRemote) {
-      const manager = NeDBStore(".");
-      const client = mqtt.connect(options.remoteHost, {
-        rejectUnauthorized: options.rejectUnauthorized,
-        reconnectPeriod: 60000,
-        clientId: app.selfId,
-        outgoingStore: manager.outgoing,
-        username: options.username,
-        password: options.password
-      });
-      startSending(options, client, plugin.onStop);
-      plugin.onStop.push(_ => client.end());
-    }
-    started = true;
-  };
-
-  plugin.stop = function() {
-    plugin.onStop.forEach(f => f());
-  };
-
-  return plugin;
-
-  function startSending(options, client, onStop) {
-    options.paths.forEach(pathInterval => {
-      onStop.push(
-        app.streambundle
-          .getSelfStream(pathInterval.path)
-          .debounceImmediate(pathInterval.interval * 1000)
-          .onValue(value =>
-            client.publish(
-              'signalk/delta',
-              JSON.stringify({
-                context: 'vessels.' + app.selfId,
-                updates: [
-                  {
-                    timestamp: new Date(),
-                    values: [
-                      {
-                        path: pathInterval.path,
-                        value: value,
-                      },
-                    ],
-                  },
-                ],
-              }),
-              { qos: 1 }
-            )
-          )
-      );
-    });
-  }
-
-  function startLocalServer(options, onStop) {
-    server = new mosca.Server(options);
-
-    app.signalk.on('delta', publishLocalDelta);
-    onStop.push(_ => { app.signalk.removeListener('delta', publishLocalDelta) });
-
-    server.on('clientConnected', function(client) {
-      console.log('client connected', client.id);
-    });
-
-    server.on('published', function(packet, client) {
-      if (client) {
-        var skData = extractSkData(packet);
-        if (skData.valid) {
-          app.signalk.addDelta(toDelta(skData, client));
+            password: {
+              type: 'string',
+              title: 'MQTT server password'
+            },
+            rejectUnauthorized: {
+              type: 'boolean',
+              default: false,
+              title: 'Reject self signed and invalid server certificates'
+            },
+            publishTopicData: {
+              type: 'boolean',
+              default: true,
+              title: 'Publish subscribed Signal K data in individual topics'
+            },
+            receiveTopicData: {
+              type: 'boolean',
+              default: false,
+              title: 'Accept data from topics to Signal K input in the server'
+            },
+            publishDeltaStream: {
+              type: 'boolean',
+              default: false,
+              title: 'Publish subscribed delta stream to /signalk/deltas'
+            },
+            publishSelfDeltaStream: {
+              type: 'boolean',
+              default: false,
+              title: `Publish subscribed delta stream to /signalk/${app
+                .getPath('self')
+                .replace(/\:/g, '_')}/deltas`
+            },
+            receiveDeltaStream: {
+              type: 'boolean',
+              default: false,
+              title: 'Receive delta messages from topic /signalk/deltas'
+            },
+            receiveSelfDeltaStream: {
+              type: 'boolean',
+              default: false,
+              title: `Receive delta messages from topic /signalk/${app
+                .getPath('self')
+                .replace(/\:/g, '_')}/deltas`
+            },
+            subscriptions: {
+              type: 'array',
+              title: 'Local Signal K subscriptions for data',
+              default: [
+                JSON.stringify({
+                  context: '*',
+                  subscribe: [{ path: '*' }]
+                })
+              ],
+              items: {
+                type: 'string',
+                title: 'Signal K subscription'
+              }
+            }
+          }
         }
       }
-    });
+    }
+  }
 
-    server.on('ready', onReady);
+  let started = false
+  let ad
 
-    function onReady() {
-      try {
-        ad = mdns.createAdvertisement(mdns.tcp('mqtt'), options.port);
-        ad.start();
-      } catch (e) {
-        console.error(e.message);
+  plugin.onStop = []
+
+  plugin.start = function (options) {
+    plugin.onStop = []
+
+    if (options.runLocalServer) {
+      startLocalServer(options, plugin.onStop)
+    }
+    started = true
+  }
+
+  plugin.stop = function () {
+    plugin.onStop.forEach(f => f())
+  }
+
+  return plugin
+
+  function startLocalServer (options, onStop) {
+    server = new mosca.Server(options)
+
+    app.signalk.on('delta', publishLocalDelta)
+    onStop.push(_ => {
+      app.signalk.removeListener('delta', publishLocalDelta)
+    })
+
+    server.on('clientConnected', function (client) {
+      app.debug('client connected', client.id)
+    })
+
+    server.on('ready', () => {
+      if (options.mdns) {
+        try {
+          ad = mdns.createAdvertisement(mdns.tcp('mqtt'), options.port)
+          ad.start()
+        } catch (e) {
+          console.error(e.message)
+        }
       }
-      console.log(
-        'Mosca MQTT server is up and running on port ' + options.port
-      );
-      onStop.push(_ => { server.close() });
-    }
+      app.debug('Mosca MQTT server is up and running on port ' + options.port)
+      onStop.push(_ => {
+        server.close()
+      })
+    })
   }
-
-  function publishLocalDelta(delta) {
-    const prefix =
-      (delta.context === app.selfContext
-        ? 'vessels/self'
-        : delta.context.replace('.', '/')) + '/';
-    delta.updates.forEach(update => {
-      update.values.forEach(pathValue => {
-        server.publish({
-          topic: prefix + pathValue.path.replace(/\./g, '/'),
-          payload:
-            pathValue.value === null ? 'null' : pathValue.value.toString(),
-          qos: 0,
-          retain: false,
-        });
-      });
-    });
-  }
-
-  function extractSkData(packet) {
-    const result = {
-      valid: false,
-    };
-    const pathParts = packet.topic.split('/');
-    if (
-      pathParts.length < 3 ||
-      pathParts[0] != 'vessels' ||
-      pathParts[1] != 'self'
-    ) {
-      return result;
-    }
-    result.context = 'vessels.' + app.selfId;
-    result.path = pathParts.splice(2).join('.');
-    if (packet.payload) {
-      result.value = Number(packet.payload.toString());
-    }
-    result.valid = true;
-    return result;
-  }
-
-  function toDelta(skData, client) {
-    return {
-      context: skData.context,
-      updates: [
-        {
-          $source: 'mqtt.' + client.id.replace(/\//g, '_').replace(/\./g, '_'),
-          values: [
-            {
-              path: skData.path,
-              value: skData.value,
-            },
-          ],
-        },
-      ],
-    };
-  }
-};
+}
