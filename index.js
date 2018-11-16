@@ -19,15 +19,13 @@ const mqtt = require('mqtt')
 const NeDBStore = require('mqtt-nedb-store')
 const mdns = require('mdns')
 
-const id = 'mqtt-gw'
-
 module.exports = function (app) {
   const plugin = {
     unsubscribes: []
   }
   let server
 
-  plugin.id = id
+  plugin.id = `${app.getPath('self').substring(app.getPath('self').lastIndexOf(':')+1).replace(/\-/g,'')}`
   plugin.name = 'MQTT'
   plugin.description =
     'plugin that provides gateway functionality between Signal K and MQTT'
@@ -42,14 +40,21 @@ module.exports = function (app) {
         title: 'Run local server (you must configure a server below to make use of it)',
         default: false
       },
+      adapter: {
+        type: 'string',
+        title: 'Local adapter to bind on',
+        default: '0.0.0.0'
+      },
       port: {
         type: 'number',
-        title: 'Local server port',
+        title: 'Local TCP server port',
         default: 1883
       },
       mdns: {
         type: 'boolean',
-        default: true
+        default: true,
+        title: 'Advertise on mDNS'
+
       },
       servers: {
         type: 'array',
@@ -57,10 +62,15 @@ module.exports = function (app) {
         items: {
           type: 'object',
           properties: {
+            alias: {
+              type: 'string',
+              title: 'Alias',
+              default: 'default'
+            },
             url: {
               type: 'string',
-              title: 'MQTT server Url (starts with mqtt/mqtts)',
-              default: 'mqtt://somehost'
+              title: 'MQTT server Url (starts with mqtt/mqtts/ws/wss)',
+              default: 'mqtt://0.0.0.0'
             },
             username: {
               type: 'string',
@@ -70,6 +80,11 @@ module.exports = function (app) {
               type: 'string',
               title: 'MQTT server password'
             },
+            clientid: {
+              type: 'string',
+              title: 'MQTT Client ID',
+              default: `${app.getPath('self').substring(app.getPath('self').lastIndexOf(':')+1).replace(/\-/g,'')}`
+            },            
             rejectUnauthorized: {
               type: 'boolean',
               default: false,
@@ -83,32 +98,42 @@ module.exports = function (app) {
             receiveTopicData: {
               type: 'boolean',
               default: false,
-              title: 'Accept data from topics to Signal K input in the server'
+              title: 'Accept data from individual topics to Signal K input in the server'
             },
+            RemoteDeltaStreamTopic: {
+              type: 'string',
+              default: `signalk/deltas`,
+              title: 'Remote Delta Stream Topic'
+            },                 
             publishDeltaStream: {
               type: 'boolean',
               default: false,
-              title: 'Publish subscribed delta stream to /signalk/deltas'
-            },
-            publishSelfDeltaStream: {
-              type: 'boolean',
-              default: false,
-              title: `Publish subscribed delta stream to /signalk/${app
-                .getPath('self')
-                .replace(/\:/g, '_')}/deltas`
+              title: 'Publish self delta stream'
             },
             receiveDeltaStream: {
               type: 'boolean',
               default: false,
-              title: 'Receive delta messages from topic /signalk/deltas'
+              title: 'Consume remote delta stream'
+            },
+
+            SelfDeltaStreamTopic: {
+              type: 'string',
+              default: `signalk/${app
+                .getPath('self')
+                .replace(/\:/g, '_').replace(/\./g, '/')}/deltas`,
+              title: 'Self Delta Stream Topic'
+            },            
+            publishSelfDeltaStream: {
+              type: 'boolean',
+              default: false,
+              title: `Publish self delta stream`
             },
             receiveSelfDeltaStream: {
               type: 'boolean',
               default: false,
-              title: `Receive delta messages from topic /signalk/${app
-                .getPath('self')
-                .replace(/\:/g, '_')}/deltas`
-            },
+              title: `Consume self delta stream`
+            },             
+            
             subscriptions: {
               type: 'array',
               title: 'Local Signal K subscriptions for data',
