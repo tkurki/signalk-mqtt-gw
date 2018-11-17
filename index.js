@@ -19,13 +19,15 @@ const mqtt = require('mqtt')
 const NeDBStore = require('mqtt-nedb-store')
 const mdns = require('mdns')
 
+const id = 'mqtt-gw'
+
 module.exports = function (app) {
   const plugin = {
     unsubscribes: []
   }
   let server
 
-  plugin.id = `${app.getPath('self').substring(app.getPath('self').lastIndexOf(':')+1).replace(/\-/g,'')}`
+  plugin.id = id
   plugin.name = 'MQTT'
   plugin.description =
     'plugin that provides gateway functionality between Signal K and MQTT'
