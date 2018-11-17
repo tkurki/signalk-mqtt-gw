@@ -110,7 +110,7 @@ module.exports = function (app) {
             publishDeltaStream: {
               type: 'boolean',
               default: false,
-              title: 'Publish self delta stream'
+              title: 'Publish delta stream'
             },
             receiveDeltaStream: {
               type: 'boolean',
