@@ -118,7 +118,7 @@ module.exports = function (app) {
               title: 'Consume remote delta stream'
             },
 
-            SelfDeltaStreamTopic: {
+            selfDeltaStreamTopic: {
               type: 'string',
               default: `signalk/${app
                 .getPath('self')
