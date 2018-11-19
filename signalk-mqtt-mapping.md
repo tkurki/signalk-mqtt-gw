@@ -11,6 +11,7 @@
   - if we map it to simply / then you can not easily subscribe to all vessels' position, since mmsi and uuid identities have different structure: `urn:mrn:imo:mmsi:230099999` and `urn:mrn:signalk:uuid:b7590868-1d62-47d9-989c-32321b349fb9`
   - there probably isn't any mechanism for escaping : in MQTT topic names? we can simply map : to some character that does not appear in MMSI and uuid identities, like underscore _
 - special shortcut in case the server is a vessel server: `/vessels/self` corresponds to self data, like elsewhere in Signal K
+- multiple values/sources handling - should we have the source information appended to the topic name? that a client can subscribe at the SK path leaf level and get values for all sources OR subscribe specifying the particular source 
 
 # Values
 
