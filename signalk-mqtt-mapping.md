@@ -25,3 +25,7 @@ Signal K object valued properties such as position and ocean current need to be 
 
 - define generic `/deltas` topic to stream any Signal K data
 - define entity specific topic `/vessels/<id>/deltas` to stream vessel specific data and use per path access control mechanism to allow different users access to each vessel's delta topic. The use case here is to creata an aggregating service that handles data from multiple vessel sources.
+
+# More complex functionalities
+
+- [request-response](https://signalk.org/specification/1.3.0/doc/request_response.html): specify well-known topics for requests and responses?
