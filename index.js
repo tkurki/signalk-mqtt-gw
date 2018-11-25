@@ -52,11 +52,15 @@ module.exports = function (app) {
         title: 'Local TCP server port',
         default: 1883
       },
+      ws: {
+        type: 'boolean',
+        default: true,
+        title: 'Route MQTT traffic over WS'
+      },     
       mdns: {
         type: 'boolean',
         default: true,
         title: 'Advertise on mDNS'
-
       },
       servers: {
         type: 'array',
@@ -92,32 +96,57 @@ module.exports = function (app) {
               default: false,
               title: 'Reject self signed and invalid server certificates'
             },
+            cleansession: {
+              type: 'boolean',
+              default: true,
+              title: 'MQTT subscription clean session'
+            },            
             publishTopicData: {
               type: 'boolean',
               default: true,
-              title: 'Publish subscribed Signal K data in individual topics'
+              title: 'Publish subscribed Signal K data (individual topics)'
             },
+ 
             receiveTopicData: {
               type: 'boolean',
               default: false,
-              title: 'Accept data from individual topics to Signal K input in the server'
+              title: 'Subscribe to data (individual topics)'
+            },  
+           publishTopicQOS: {
+              type: 'number',
+              default: 0,
+              title: 'MQTT Publish QOS (individual topics)'
+            },                                  
+            receiveTopicQOS: {
+              type: 'number',
+              default: 0,
+              title: 'MQTT Subscribe QOS (individual topics)'
             },
             RemoteDeltaStreamTopic: {
               type: 'string',
               default: `signalk/deltas`,
               title: 'Remote Delta Stream Topic'
-            },                 
+            },   
             publishDeltaStream: {
               type: 'boolean',
               default: false,
               title: 'Publish delta stream'
-            },
+            },                          
             receiveDeltaStream: {
               type: 'boolean',
               default: false,
-              title: 'Consume remote delta stream'
+              title: 'Subscribe to remote delta stream'
             },
-
+            publishDeltaStreamQOS: {
+              type: 'number',
+              default: 0,
+              title: 'MQTT Publish QOS (delta stream)'
+            },            
+            receiveDeltaStreamQOS: {
+              type: 'number',
+              default: 0,
+              title: 'MQTT Subscribe QOS (delta stream)'
+            },            
             selfDeltaStreamTopic: {
               type: 'string',
               default: `signalk/${app
@@ -128,14 +157,13 @@ module.exports = function (app) {
             publishSelfDeltaStream: {
               type: 'boolean',
               default: false,
-              title: `Publish self delta stream`
-            },
-            receiveSelfDeltaStream: {
-              type: 'boolean',
-              default: false,
-              title: `Consume self delta stream`
-            },             
-            
+              title: 'Publish self delta stream'
+            },  
+            publishSelfDeltaStreamQOS: {
+              type: 'number',
+              default: 0,
+              title: 'MQTT Publish QOS (self delta stream)'
+            },                  
             subscriptions: {
               type: 'array',
               title: 'Local Signal K subscriptions for data',
