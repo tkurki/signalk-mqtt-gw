@@ -11,7 +11,7 @@ If you run a local server you can send data to the server like so:
 
 `mosquitto_pub -h localhost -p 1883 -m 292 -t 'vessels/self/environment/temperature/outside'`
 
-and if you configure the plugin to send some paths, like `navigation.speedOverGround`, to the local server you can check that it is working with `mosquitto_sub`:
+You can check that data is being sent to the local server with `mosquitto_sub`:
 ```
 $ mosquitto_sub -h localhost -p 1884 -t 'vessels/self/navigation/speedOverGround'
 3.58
