@@ -13,8 +13,10 @@
   "license": "ISC",
   "dependencies": {
     "debug": "^2.3.2",
-    "mdns": "^2.3.3",
     "mosca": "^2.2.0",
     "mqtt-nedb-store": "^0.1.0"
+  },
+  "optionalDependencies": {
+    "mdns": "^2.3.3"
   }
 }
