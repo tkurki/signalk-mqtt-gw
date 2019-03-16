@@ -19,7 +19,6 @@ const debug = require('debug')(id);
 const mosca = require('mosca');
 const mqtt = require('mqtt');
 const NeDBStore = require('mqtt-nedb-store');
-const mdns = require('mdns');
 
 module.exports = function(app) {
   var plugin = {
@@ -180,6 +179,7 @@ module.exports = function(app) {
 
     function onReady() {
       try {
+        const mdns = require('mdns');
         ad = mdns.createAdvertisement(mdns.tcp('mqtt'), options.port);
         ad.start();
       } catch (e) {
