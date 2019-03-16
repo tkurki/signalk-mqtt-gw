@@ -105,7 +105,7 @@ module.exports = function(app) {
       startLocalServer(options, plugin.onStop);
     }
     if (options.sendToRemote) {
-      const manager = NeDBStore(".");
+      const manager = NeDBStore(app.getDataDirPath());
       const client = mqtt.connect(options.remoteHost, {
         rejectUnauthorized: options.rejectUnauthorized,
         reconnectPeriod: 60000,
