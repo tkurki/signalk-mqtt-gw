@@ -130,20 +130,22 @@ module.exports = function(app) {
     options.paths.forEach(pathInterval => {
       onStop.push(
         app.streambundle
-          .getSelfStream(pathInterval.path)
+          .getSelfBus(pathInterval.path)
           .debounceImmediate(pathInterval.interval * 1000)
-          .onValue(value =>
+          .log()
+          .onValue(normalizedPathValue =>
             client.publish(
               'signalk/delta',
               JSON.stringify({
                 context: 'vessels.' + app.selfId,
                 updates: [
                   {
-                    timestamp: new Date(),
+                    timestamp: normalizedPathValue.timestamp,
+                    $source: normalizedPathValue.$source,
                     values: [
                       {
                         path: pathInterval.path,
-                        value: value,
+                        value: normalizedPathValue.value,
                       },
                     ],
                   },
