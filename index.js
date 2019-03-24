@@ -114,6 +114,7 @@ module.exports = function(app) {
         username: options.username,
         password: options.password
       });
+      client.on('error', (err) => console.error(err))
       startSending(options, client, plugin.onStop);
       plugin.onStop.push(_ => client.end());
     }
