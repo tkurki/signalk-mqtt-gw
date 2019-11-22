@@ -205,12 +205,19 @@ module.exports = function(app) {
         server.publish({
           topic: prefix + pathValue.path.replace(/\./g, '/'),
           payload:
-            pathValue.value === null ? 'null' : pathValue.value.toString(),
+            pathValue.value === null ? 'null' : toText(pathValue.value),
           qos: 0,
           retain: false,
         });
       });
     });
+  }
+
+  function toText(value) {
+    if (typeof value === 'object') {
+      return JSON.stringify(value)
+    }
+    return value.toString()
   }
 
   function extractSkData(packet) {
