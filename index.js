@@ -48,7 +48,7 @@ module.exports = function(app) {
       },
       sendToRemote: {
         type: 'boolean',
-        title: 'Send position to remote server',
+        title: 'Send data for paths listed below to remote server',
         default: false,
       },
       remoteHost: {
