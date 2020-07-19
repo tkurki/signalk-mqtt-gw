@@ -173,12 +173,15 @@ module.exports = function(app) {
       if (client) {
         var skData = extractSkData(packet);
         if (skData.valid) {
-          app.signalk.addDelta(toDelta(skData, client));
+          app.handleMessage(id, toDelta(skData, client));
         }
       }
     });
 
     server.on('ready', onReady);
+    // server.on('error', (err) => {
+    //   app.error(err)
+    // })
 
     function onReady() {
       try {
