@@ -133,7 +133,6 @@ module.exports = function(app) {
         app.streambundle
           .getSelfBus(pathInterval.path)
           .debounceImmediate(pathInterval.interval * 1000)
-          .log()
           .onValue(normalizedPathValue =>
             client.publish(
               'signalk/delta',
