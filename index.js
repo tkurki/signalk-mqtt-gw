@@ -90,6 +90,35 @@ module.exports = function(app) {
           },
         },
       },
+      inputBrokers: {
+        type: 'array',
+        title: 'Servers to connect to and read delta messages from signalk/delta',
+        items: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              title: 'MQTT server Url',
+              description:
+                'mqtt://somehost:someport (or mqtts)',
+              default: 'mqtt://somehost:someport',
+            },
+            username: {
+              type: "string",
+              title: "Username"
+            },
+            password: {
+              type: "string",
+              title: "Password"
+            },
+            rejectUnauthorized: {
+              type: "boolean",
+              default: false,
+              title: "Reject self signed and invalid server certificates"
+            },
+          },
+        },
+      },
     },
   };
 
@@ -118,6 +147,30 @@ module.exports = function(app) {
       startSending(options, client, plugin.onStop);
       plugin.onStop.push(_ => client.end());
     }
+    options.inputBrokers && options.inputBrokers.forEach(brokerSpec => {
+      const client = mqtt.connect(brokerSpec.url, {
+        ...brokerSpec,
+        clean: false,
+        reconnectPeriod: 2225,
+        connectTimeout: 30 * 1000,
+        clientId: app.selfId
+      })
+
+      client.on('connect', function () {
+        client.subscribe('signalk/delta', function (err) {
+          if (err) {
+            console.error(err)
+          }
+        })
+      })
+
+      client.on('message', (topic, message) => {
+        app.handleMessage('', JSON.parse(message.toString()))
+      })
+      plugin.onStop.push(() => {
+        client.end()
+      })
+    })
     started = true;
   };
 
