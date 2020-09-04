@@ -35,3 +35,8 @@ jspm_packages
 
 # Optional REPL history
 .node_repl_history
+
+boat.signalk-mqtt-gw/outgoing
+boat.signalk-mqtt-gw/incoming
+cloud.signalk-mqtt-gw/outgoing
+cloud.signalk-mqtt-gw/incoming

@@ -1,0 +1,8 @@
+{
+  "vessels": {
+    "self": {
+      "uuid": "urn:mrn:signalk:uuid:480da0c2-e526-4e7a-a174-2e43913e555a",
+      "name": "Boat"
+    }
+  }
+}
