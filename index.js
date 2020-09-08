@@ -71,6 +71,11 @@ module.exports = function(app) {
         default: false,
         title: "Reject self signed and invalid server certificates"
       },
+      selfContextInDelta: {
+        type: "boolean",
+        default: true,
+        title: "Include vessel id as self context in deltas (turn off to not send self context)"
+      },
       paths: {
         type: 'array',
         title: 'Signal K self paths to send',
@@ -186,27 +191,30 @@ module.exports = function(app) {
         app.streambundle
           .getSelfBus(pathInterval.path)
           .debounceImmediate(pathInterval.interval * 1000)
-          .onValue(normalizedPathValue =>
+          .onValue(normalizedPathValue => {
+            const delta = {
+              updates: [
+                {
+                  timestamp: normalizedPathValue.timestamp,
+                  $source: normalizedPathValue.$source,
+                  values: [
+                    {
+                      path: pathInterval.path,
+                      value: normalizedPathValue.value,
+                    },
+                  ],
+                },
+              ],
+            }
+            if (options.selfContextInDelta || typeof options.selfContextInDelta === 'undefined') {
+              delta.context = 'vessels.' + app.selfId
+            }
             client.publish(
               'signalk/delta',
-              JSON.stringify({
-                context: 'vessels.' + app.selfId,
-                updates: [
-                  {
-                    timestamp: normalizedPathValue.timestamp,
-                    $source: normalizedPathValue.$source,
-                    values: [
-                      {
-                        path: pathInterval.path,
-                        value: normalizedPathValue.value,
-                      },
-                    ],
-                  },
-                ],
-              }),
+              JSON.stringify(delta),
               { qos: 1 }
             )
-          )
+          })
       );
     });
   }
