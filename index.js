@@ -202,8 +202,8 @@ module.exports = function(app) {
       (delta.context === app.selfContext
         ? 'vessels/self'
         : delta.context.replace('.', '/')) + '/';
-    delta.updates.forEach(update => {
-      update.values.forEach(pathValue => {
+    (delta.updates || []).forEach(update => {
+      (update.values || []).forEach(pathValue => {
         server.publish({
           topic: prefix + pathValue.path.replace(/\./g, '/'),
           payload:
