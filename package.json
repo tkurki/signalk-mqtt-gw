@@ -1,6 +1,6 @@
 {
   "name": "signalk-mqtt-gw",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Signal K server plugin that provides gateway functionality between Signal K and MQTT",
   "main": "index.js",
   "scripts": {
