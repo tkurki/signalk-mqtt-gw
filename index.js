@@ -71,6 +71,11 @@ module.exports = function(app) {
         default: false,
         title: "Reject self signed and invalid server certificates"
       },
+      selfContextInDelta: {
+        type: "boolean",
+        default: true,
+        title: "Include vessel id as self context in deltas (turn off to not send self context)"
+      },
       paths: {
         type: 'array',
         title: 'Signal K self paths to send',
@@ -86,6 +91,35 @@ module.exports = function(app) {
               type: 'number',
               title:
                 'Minimum interval between updates for this path to be sent to the server',
+            },
+          },
+        },
+      },
+      inputBrokers: {
+        type: 'array',
+        title: 'Servers to connect to and read delta messages from signalk/delta',
+        items: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              title: 'MQTT server Url',
+              description:
+                'mqtt://somehost:someport (or mqtts)',
+              default: 'mqtt://somehost:someport',
+            },
+            username: {
+              type: "string",
+              title: "Username"
+            },
+            password: {
+              type: "string",
+              title: "Password"
+            },
+            rejectUnauthorized: {
+              type: "boolean",
+              default: false,
+              title: "Reject self signed and invalid server certificates"
             },
           },
         },
@@ -118,6 +152,30 @@ module.exports = function(app) {
       startSending(options, client, plugin.onStop);
       plugin.onStop.push(_ => client.end());
     }
+    options.inputBrokers && options.inputBrokers.forEach(brokerSpec => {
+      const client = mqtt.connect(brokerSpec.url, {
+        ...brokerSpec,
+        clean: false,
+        reconnectPeriod: 2225,
+        connectTimeout: 30 * 1000,
+        clientId: app.selfId
+      })
+
+      client.on('connect', function () {
+        client.subscribe('signalk/delta', function (err) {
+          if (err) {
+            console.error(err)
+          }
+        })
+      })
+
+      client.on('message', (topic, message) => {
+        app.handleMessage('', JSON.parse(message.toString()))
+      })
+      plugin.onStop.push(() => {
+        client.end()
+      })
+    })
     started = true;
   };
 
@@ -133,27 +191,30 @@ module.exports = function(app) {
         app.streambundle
           .getSelfBus(pathInterval.path)
           .debounceImmediate(pathInterval.interval * 1000)
-          .onValue(normalizedPathValue =>
+          .onValue(normalizedPathValue => {
+            const delta = {
+              updates: [
+                {
+                  timestamp: normalizedPathValue.timestamp,
+                  $source: normalizedPathValue.$source,
+                  values: [
+                    {
+                      path: pathInterval.path,
+                      value: normalizedPathValue.value,
+                    },
+                  ],
+                },
+              ],
+            }
+            if (options.selfContextInDelta || typeof options.selfContextInDelta === 'undefined') {
+              delta.context = 'vessels.' + app.selfId
+            }
             client.publish(
               'signalk/delta',
-              JSON.stringify({
-                context: 'vessels.' + app.selfId,
-                updates: [
-                  {
-                    timestamp: normalizedPathValue.timestamp,
-                    $source: normalizedPathValue.$source,
-                    values: [
-                      {
-                        path: pathInterval.path,
-                        value: normalizedPathValue.value,
-                      },
-                    ],
-                  },
-                ],
-              }),
+              JSON.stringify(delta),
               { qos: 1 }
             )
-          )
+          })
       );
     });
   }

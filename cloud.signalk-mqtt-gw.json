@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "enableLogging": false,
+  "enableDebug": false,
+  "configuration": {
+    "runLocalServer": false,
+    "port": 1883,
+    "sendToRemote": false,
+    "remoteHost": "mqtt://somehost",
+    "rejectUnauthorized": false,
+    "paths": [
+    ],
+    "inputBrokers": [
+      {
+        "url": "mqtt://mosquitto-cloud",
+        "rejectUnauthorized": false
+      }
+    ]
+  }
+}

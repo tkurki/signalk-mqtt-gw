@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "enableLogging": false,
+  "enableDebug": false,
+  "configuration": {
+    "runLocalServer": false,
+    "port": 1883,
+    "sendToRemote": true,
+    "remoteHost": "mqtt://host.docker.internal:11883",
+    "rejectUnauthorized": false,
+    "selfContextInDelta": false,
+    "paths": [
+      {
+        "path": "navigation.position",
+        "interval": 1
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  signalk-cloud:
+    image: signalk/signalk-server
+    ports:
+        - 23000:3000
+    volumes:
+        - ./:/home/node/.signalk/node_modules/signalk-mqtt-gw
+        - ./cloud.defaults.json:/home/node/.signalk/defaults.json
+        - ./cloud.signalk-mqtt-gw/:/home/node/.signalk/plugin-config-data/signalk-mqtt-gw
+        - ./cloud.signalk-mqtt-gw.json:/home/node/.signalk/plugin-config-data/signalk-mqtt-gw.json
+    entrypoint: /home/node/signalk/bin/signalk-server
+  mosquitto-cloud:
+    image: eclipse-mosquitto
+    ports:
+      - 21883:1883
+    volumes:
+      - ./cloud.mosquitto.conf:/mosquitto/config/mosquitto.conf

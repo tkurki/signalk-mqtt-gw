@@ -18,3 +18,12 @@ $ mosquitto_sub -h localhost -p 1884 -t 'vessels/self/navigation/speedOverGround
 3.59
 3.59
 ```
+
+
+
+docker-compose -f docker-compose.boat.yml up
+
+docker exec signalk-mqtt-gw_mosquitto-boat_1 mosquitto_sub -t signalk/delta
+
+docker exec signalk-mqtt-gw_mosquitto-cloud_1 mosquitto_sub -t signalk/delta
+

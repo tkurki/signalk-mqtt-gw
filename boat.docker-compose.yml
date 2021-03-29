@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  signalk-boat:
+    image: signalk/signalk-server
+    ports:
+        - 13000:3000
+    volumes:
+        - ./:/home/node/.signalk/node_modules/signalk-mqtt-gw
+        - ./boat.defaults.json:/home/node/.signalk/defaults.json
+        - ./boat.signalk-mqtt-gw/:/home/node/.signalk/plugin-config-data/signalk-mqtt-gw
+        - ./boat.signalk-mqtt-gw.json:/home/node/.signalk/plugin-config-data/signalk-mqtt-gw.json
+    user: root
+    entrypoint:
+      - /bin/sh
+      - -c
+      - ip -4 route list match 0/0 | awk '{print $$3" host.docker.internal"}' >> /etc/hosts && su - node -c '/home/node/signalk/bin/signalk-server --sample-nmea0183-data'
+  mosquitto-boat:
+    image: eclipse-mosquitto
+    ports:
+      - 11883:1883
+    volumes:
+      - ./boat.mosquitto.conf:/mosquitto/config/mosquitto.conf
+    entrypoint:
+      - /bin/sh
+      - -c
+      - ip -4 route list match 0/0 | awk '{print $$3" host.docker.internal"}' >> /etc/hosts && /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf
