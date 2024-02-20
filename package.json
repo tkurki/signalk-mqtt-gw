@@ -12,12 +12,12 @@
   "author": "teppo.kurki@iki,fi",
   "license": "ISC",
   "dependencies": {
+    "aedes": "^0.51.0",
     "debug": "^2.3.2",
-    "mosca": "^2.2.0",
-    "mqtt-nedb-store": "^0.1.0",
-    "jsonschema": "1.2.6"
+    "mqtt": "^5.3.5",
+    "mqtt-jsonl-store": "^0.2.1"
   },
   "optionalDependencies": {
-    "mdns": "^2.3.3"
+    "mdns": "^2.7.2"
   }
 }
