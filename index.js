@@ -49,7 +49,6 @@ module.exports = function createPlugin(app) {
     if (options.sendToRemote) {
       manager = new Manager(app.getDataDirPath());
       startMqttClient(manager,plugin.onStop);
-      statusUpdate();
     }
     async function startMqttClient(manager) {
       await manager.open();
@@ -86,6 +85,8 @@ module.exports = function createPlugin(app) {
       if (deltaHandler) {
         app.signalk.on('delta', deltaHandler);
       }
+
+      statusUpdate();
 
       plugin.onStop.push(_ => {
         client.end()
