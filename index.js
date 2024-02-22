@@ -16,7 +16,6 @@
 */
 
 const id = 'signalk-mqtt-gw';
-const debug = require('debug')(id);
 const mqtt = require('mqtt');
 const { Manager } = require("mqtt-jsonl-store");
 
@@ -32,19 +31,26 @@ module.exports = function createPlugin(app) {
   let aedes;
   let ad;
   let client;
-  let manager
+  let manager;
   const setStatus = app.setPluginStatus || app.setProviderStatus;
-  
+  let localServerMessage = 'not running';
+  let remoteServerMessage = 'not running';
+
   plugin.start = function (options) {
     app.debug("Aedes MQTT Plugin Started");
+    statusUpdate();
     plugin.onStop = [];
 
     if (options.runLocalServer) {
       startLocalServer(options, plugin.onStop);
+      localServerMessage = 'running on port ' + options.port;
+      statusUpdate();
     }
     if (options.sendToRemote) {
       manager = new Manager(app.getDataDirPath());
       startMqttClient(manager,plugin.onStop);
+      remoteServerMessage = 'started';
+      statusUpdate();
     }
     async function startMqttClient(manager) {
       await manager.open();
@@ -59,49 +65,39 @@ module.exports = function createPlugin(app) {
       });
       client.on('error', (err) => console.error(err))
 
-      if (options.selectedOption === '1) vessel.self') {
-        const deltaHandler = function(delta) {
-          publishRemoteDelta(delta, client, false);
-        };
-        app.signalk.on('delta', deltaHandler);
-        plugin.onStop.push(_ => {
-          client.end()
-          stopManager()
-          app.signalk.removeListener('delta', deltaHandler);
-        });      
+      let deltaHandler = undefined;
+      if (options.selectedOption === '1) vessels.self') {
+        deltaHandler = (delta) => publishRemoteDelta(delta, client, false)
+        remoteServerMessage = 'vessels.self to ' + options.remoteHost;
+        statusUpdate();
       } 
       else if (options.selectedOption === '2) all deltas') {
-        const deltaHandler = function(delta) {
-          publishRemoteDelta(delta, client, true);
-        };
-        app.signalk.on('delta', deltaHandler);
-        plugin.onStop.push(_ => {
-          client.end()
-          stopManager()
-          app.signalk.removeListener('delta', deltaHandler);
-        });
+        deltaHandler = (delta) => publishRemoteDelta(delta, client, true)
+        remoteServerMessage = 'all deltas to ' + options.remoteHost;
+        statusUpdate();
       } 
       else if (options.selectedOption === '3) self paths in JSON format') {
         startSending(options, client, plugin.onStop);
-        plugin.onStop.push(_ => {
-          client.end()
-          stopManager()
-        });
+        remoteServerMessage = 'JSON to ' + options.remoteHost;
+        statusUpdate();
       } 
       else if (options.selectedOption === '4) all deltas + JSON') {
         startSending(options, client, plugin.onStop);
-        const deltaHandler = function(delta) {
-          publishRemoteDelta(delta, client, true);
-        };
-        app.signalk.on('delta', deltaHandler);
-        plugin.onStop.push(_ => {
-          client.end()
-          stopManager()
-          app.signalk.removeListener('delta', deltaHandler);
-        });
+        deltaHandler = (delta) => publishRemoteDelta(delta, client, true);
+        remoteServerMessage = 'all deltas and JSON to ' + options.remoteHost;
+        statusUpdate();
       }
+
+      if (deltaHandler) {
+        app.signalk.on('delta', deltaHandler);
+      }
+
+      plugin.onStop.push(_ => {
+        client.end()
+        stopManager()
+        deltaHandler && app.signalk.removeListener('delta', deltaHandler);
+      });
     }    
-    started = true;
   };
 
   async function stopManager() {
@@ -117,9 +113,9 @@ module.exports = function createPlugin(app) {
     if (server) {
       server.close();
       aedes.close();
-    }
-    if (ad) {
-      ad.stop();
+      if (ad) {
+        ad.stop();
+      }
     }
     app.debug("Aedes MQTT Plugin Stopped");
   };
@@ -167,9 +163,9 @@ module.exports = function createPlugin(app) {
       selectedOption: {
         type: "string",
         title: "Data to send to remote server",
-        enum: ["1) vessel.self", "2) all deltas", "3) self paths in JSON format", "4) all deltas + JSON"],
+        enum: ["1) vessels.self", "2) all deltas", "3) self paths in JSON format", "4) all deltas + JSON"],
         description: 'Select the type of data to send to the remote server',
-        default: "1) vessel.self"
+        default: "1) vessels.self"
       },
       paths: {
         type: 'array',
@@ -193,13 +189,24 @@ module.exports = function createPlugin(app) {
     },
   };
 
+  function outputMessages() {
+    setImmediate(() =>
+      app.reportOutputMessages()
+    )
+  }
+
+  function statusUpdate () {
+    setStatus(`Broker: ${localServerMessage}, Client: ${remoteServerMessage}`)
+  }
+
   function startSending(options, client, onStop) {
     options.paths.forEach(pathInterval => {
       onStop.push(
         app.streambundle
           .getSelfBus(pathInterval.path)
           .debounceImmediate(pathInterval.interval * 1000)
-          .onValue(normalizedPathValue =>
+          .onValue(normalizedPathValue => {
+            outputMessages();
             client.publish(
               'signalk/delta',
               JSON.stringify({
@@ -219,7 +226,7 @@ module.exports = function createPlugin(app) {
               }),
               { qos: 1 }
             )
-          )
+          })
       );
     });
   }
@@ -247,7 +254,8 @@ module.exports = function createPlugin(app) {
               { qos: 1 }
             )
         });
-      });  
+      });
+    outputMessages();
   }
 
   function startLocalServer(options, onStop) {
