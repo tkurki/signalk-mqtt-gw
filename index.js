@@ -49,7 +49,6 @@ module.exports = function createPlugin(app) {
     if (options.sendToRemote) {
       manager = new Manager(app.getDataDirPath());
       startMqttClient(manager,plugin.onStop);
-      remoteServerMessage = 'started';
       statusUpdate();
     }
     async function startMqttClient(manager) {
@@ -69,23 +68,19 @@ module.exports = function createPlugin(app) {
       if (options.selectedOption === '1) vessels.self') {
         deltaHandler = (delta) => publishRemoteDelta(delta, client, false)
         remoteServerMessage = 'vessels.self to ' + options.remoteHost;
-        statusUpdate();
       } 
       else if (options.selectedOption === '2) all deltas') {
         deltaHandler = (delta) => publishRemoteDelta(delta, client, true)
         remoteServerMessage = 'all deltas to ' + options.remoteHost;
-        statusUpdate();
       } 
       else if (options.selectedOption === '3) self paths in JSON format') {
         startSending(options, client, plugin.onStop);
         remoteServerMessage = 'JSON to ' + options.remoteHost;
-        statusUpdate();
       } 
       else if (options.selectedOption === '4) all deltas + JSON') {
         startSending(options, client, plugin.onStop);
         deltaHandler = (delta) => publishRemoteDelta(delta, client, true);
         remoteServerMessage = 'all deltas and JSON to ' + options.remoteHost;
-        statusUpdate();
       }
 
       if (deltaHandler) {
