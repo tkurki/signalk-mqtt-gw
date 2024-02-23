@@ -322,10 +322,12 @@ module.exports = function createPlugin(app) {
   }
 
   function toText(value) {
-    if (typeof value === 'object') {
-      return JSON.stringify(value)
+    if (typeof value !== 'undefined') {
+      if (typeof value === 'object') {
+        return JSON.stringify(value)
+      }
+      return value.toString()  
     }
-    return value.toString()
   }
 
   function extractSkData(packet) {
