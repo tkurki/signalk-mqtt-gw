@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+
+const TJS = require('typescript-json-schema')
+const { resolve } = require('path')
+const $RefParser = require('@apidevtools/json-schema-ref-parser')
+
+const program = TJS.getProgramFromFiles([resolve(__dirname, 'src/plugin.ts')])
+const schemaFromTs = TJS.generateSchema(program, 'PluginConfig')
+let schema = {}
+$RefParser.dereference(schemaFromTs, (err, derefSchema) => {
+  if (err) {
+    console.error(err)
+  } else {
+    schema = derefSchema
+    console.log(JSON.stringify(schema, null, 2))
+  }
+})
