@@ -4,7 +4,14 @@
   "description": "Signal K server plugin that provides gateway functionality between Signal K and MQTT",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint:only": "eslint src --ext .ts",
+    "prettier": "prettier -w src/",
+    "lint": "eslint -c .eslintrc.js --ext .ts --ext .js --fix src/",
+    "format": "npm run prettier && npm run lint",
+    "ci-lint": "eslint -c .eslintrc.js --ext .ts --ext .js src/ && prettier --check src/",
+    "generate-schema": "./generate-schema >dist/PluginConfig.json",
+    "build": "tsc && npm run generate-schema",
+    "prepublishOnly": "npm install && npm run build"
   },
   "keywords": [
     "signalk-node-server-plugin"
@@ -16,6 +23,21 @@
     "debug": "^2.3.2",
     "mqtt": "^5.3.5",
     "mqtt-jsonl-store": "^0.2.1"
+  },
+  "devDependencies": {
+    "@apidevtools/json-schema-ref-parser": "^11.1.0",
+    "@signalk/server-api": "^2.3.0",
+    "@types/express": "^4.17.17",
+    "@types/node": "^18.7.6",
+    "@typescript-eslint/eslint-plugin": "^5.52.0",
+    "@typescript-eslint/parser": "^5.52.0",
+    "eslint": "^8.34.0",
+    "eslint-config-prettier": "^8.6.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.4",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.3",
+    "typescript-json-schema": "^0.54.0"
   },
   "optionalDependencies": {
     "mdns": "^2.7.2"
