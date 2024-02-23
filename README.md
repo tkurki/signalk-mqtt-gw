@@ -1,10 +1,17 @@
 # Signal K - MQTT Gateway
 
-Signal K Node server plugin that functions as a gateway between MQTT and SK server. You can
-- run a local server that has all SK data available and that routes all data from other MQTT clients to Signal K deltas. The server is advertised via mdns/Bonjour
-- connect to a MQTT server and send deltas you choose with chosen interval to `signalk/delta`
+Signal K Node server plugin that functions as a gateway between MQTT and SK server.
 
-![image](https://user-images.githubusercontent.com/1049678/28848552-0d624088-771c-11e7-963d-4a7761bfd2a4.png)
+## Local MQTT broker/server
+- All SK deltas data available from broker/server. The server is advertised via mdns/Bonjour if available
+## MQTT Client
+- Send user selectable deltas (vessels.self, all deltas, JSON deltas from selectable paths or alldetas and JSON deltas) to remote broker/server
+
+![image](https://github.com/KEGustafsson/signalk-mqtt-gw/assets/3332251/9e37d8f6-b043-4118-a1c7-0c581d01ffd3)
+
+![image](https://github.com/KEGustafsson/signalk-mqtt-gw/assets/3332251/445fdd5e-9277-4bab-ada0-b58bd02242ed)
+
+![image](https://github.com/KEGustafsson/signalk-mqtt-gw/assets/3332251/20b3ad30-1e48-4b4f-962f-5f64f70bd7e8)
 
 
 If you run a local server you can send data to the server like so:
